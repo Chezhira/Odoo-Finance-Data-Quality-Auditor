@@ -1,17 +1,15 @@
 # Odoo Finance Data Quality Auditor
 
-A finance controls and audit-readiness tool for reviewing Odoo-compatible accounting exports. The project validates ERP finance data, flags control exceptions, and produces an Excel exception review workbook for finance, audit, reconciliation, and systems cleanup workflows.
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
+[![CI](https://github.com/Chezhira/Odoo-Finance-Data-Quality-Auditor/actions/workflows/ci.yml/badge.svg)](https://github.com/Chezhira/Odoo-Finance-Data-Quality-Auditor/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.1.0-0f766e.svg)](pyproject.toml)
+[![Streamlit](https://img.shields.io/badge/Streamlit-dashboard-ff4b4b.svg)](https://streamlit.io/)
 
-## Why This Exists
+A finance controls and audit-readiness tool for reviewing Odoo-compatible accounting exports. The project validates ERP finance data, flags control exceptions, and produces an Excel exception workbook for finance, audit, and systems cleanup workflows.
 
-Finance teams often need a fast way to assess close readiness before month-end reporting, audit fieldwork, ERP cleanup, or finance systems assurance reviews. This project turns representative ERP finance data extracts into a practical exception review:
+## Why It Matters
 
-- close readiness checks for journals, suspense, bank reconciliation, and manual adjustments
-- audit trail review for inactive accounts, deprecated accounts, and high-risk postings
-- tax evidence checks for customer invoices and vendor bills
-- inventory valuation review for negative quantity or value records
-- reconciliation follow-up for aged unreconciled bank lines
-- ERP data quality review for analytics, FX metadata, and duplicate references
+Finance teams need a practical way to assess close readiness, audit trail quality, reconciliation follow-up, tax evidence gaps, inventory valuation issues, and ERP cleanup priorities. This project turns representative ERP finance data extracts into a structured exception review that can be used by finance, audit, and systems teams.
 
 ## Target Users
 
@@ -20,18 +18,38 @@ Finance teams often need a fast way to assess close readiness before month-end r
 - ERP business analysts preparing audit-readiness or reconciliation follow-up packs
 - accounting systems consultants assessing controls, evidence, and exception remediation
 
-## Portfolio Signal
+## Key Features
 
-This project demonstrates finance systems judgement and practical engineering delivery across:
+- 10 registered finance validation checks with risk level, source model, and recommended action metadata
+- Streamlit dashboard for executive-facing exception review
+- Excel exception workbook with summary and detailed remediation tabs
+- CLI workflow for repeatable validation and report generation
+- pytest coverage for loader validation, rule behavior, dashboard helpers, and workbook export
+- GitHub Actions workflow for tests and sample-data smoke validation
 
-- Odoo and ERP accounting data understanding
-- audit-style exception reporting and recommended actions
-- automated validation discipline with positive and negative pytest coverage
-- CI/CD-ready project structure and repeatable smoke tests
-- finance controls thinking across close readiness, tax evidence, reconciliation, inventory valuation, and ERP cleanup
-- portfolio-ready delivery for Odoo Functional Consultant, ERP Business Analyst, Finance Systems Analyst, and Accounting Systems Consultant roles
+## Screenshots
 
-## Current Checks
+The screenshots below are generated from the included sample data.
+
+### Dashboard Overview
+
+![Dashboard overview](docs/screenshots/dashboard-overview.png)
+
+### Control Breakdowns
+
+![Control breakdowns](docs/screenshots/dashboard-control-breakdowns.png)
+
+### Exception Review
+
+![Exception review](docs/screenshots/dashboard-exception-review.png)
+
+### Excel Exception Workbook
+
+![Excel workbook summary sheet](docs/screenshots/excel-summary-sheet.png)
+
+![Excel workbook exceptions sheet](docs/screenshots/excel-exceptions-sheet.png)
+
+## Current Validation Checks
 
 The validation engine currently runs 10 registered checks:
 
@@ -46,42 +64,49 @@ The validation engine currently runs 10 registered checks:
 9. FX entries missing currency or exchange rate metadata
 10. Manual journals above the configured review threshold
 
-Each check has a central registry entry with its name, description, risk level, source model, and recommended action. The CLI and dashboard both use this registry so check counts stay aligned with the implemented controls.
+Each check is defined in a central registry with its name, description, risk level, source model, and recommended action. The CLI and dashboard both use the registry so check counts stay aligned with the implemented controls.
 
-## Streamlit Dashboard
+## Dashboard
 
-The dashboard provides a finance control tower style review screen for sample ERP finance exports. It shows:
+The Streamlit dashboard provides a finance control tower style review screen for ERP data quality and audit-readiness review. It includes:
 
 - KPI cards for checks run, exceptions found, high-risk exceptions, and issue types
-- exception breakdowns by risk level, issue type, and source model
-- filters for risk level, issue type, and source model
-- a detailed exception review table with recommended actions
-- an Excel workbook download for the current filtered exception set
+- risk concentration, top exception type, and affected ERP area breakdowns
+- filters for risk level, issue type, and ERP area
+- detailed exception review with recommended remediation actions
+- Excel workbook download for the current filtered exception population
 
-The dashboard is intended for executive-facing audit-readiness review: a viewer can see the size of the exception population, where risk is concentrated, which source models need cleanup, and what remediation action is recommended.
-
-Run it with:
+Run the dashboard with:
 
 ```powershell
 $env:PYTHONPATH='src'; streamlit run app.py
 ```
 
-Open [http://localhost:8501](http://localhost:8501/) after the server starts.
+Then open [http://localhost:8501](http://localhost:8501/).
 
-## CLI Usage
+## Excel Exception Workbook
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
-$env:PYTHONPATH='src'; python -m odoo_finance_data_auditor.cli --sample-data data\sample --output reports\sample_exception_report.xlsx
-```
-
-The CLI writes an Excel exception review workbook with:
+The CLI and dashboard both produce an exception review workbook with:
 
 - `Summary`: exception counts by risk level and issue type
 - `Exceptions`: check name, risk level, entity, source model, record ID, issue type, date, amount, recommended action, message, check ID, and metadata
 
-With the included sample data, the CLI currently runs 10 checks and produces 13 intentionally triggered exceptions.
+With the included sample data, the validation run currently executes 10 checks and produces 13 intentionally triggered exceptions.
+
+## Installation
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+```
+
+## CLI Usage
+
+```powershell
+$env:PYTHONPATH='src'; python -m odoo_finance_data_auditor.cli --sample-data data\sample --output reports\sample_exception_report.xlsx
+```
+
+Binary Excel outputs are intentionally ignored by git through `reports/*.xlsx`. Regenerate the sample exception workbook at any time with the CLI command above.
 
 ## Testing And CI
 
@@ -91,39 +116,24 @@ Run the test suite with:
 python -m pytest --basetemp .pytest-tmp
 ```
 
-The repository includes a GitHub Actions workflow that installs the package, runs pytest, and performs a sample-data CLI smoke test so the validation engine and workbook export stay release-ready.
+The GitHub Actions workflow installs the package, runs pytest, and performs a sample-data CLI smoke test so the validation engine and workbook export stay reliable.
 
-## Sample Output
+## Sample Data And Privacy
 
-Binary Excel outputs are intentionally ignored by git through `reports/*.xlsx`. This keeps the public repository lightweight and avoids committing local report artifacts.
+This repository includes synthetic sample data for demonstration and testing purposes. The sample files are designed to resemble common Odoo finance exports, but they do not contain employer, client, or production data.
 
-Regenerate the sample exception workbook at any time with:
+Generated reports are written under `reports/` and ignored by git, except for `reports/.gitkeep`.
 
-```powershell
-$env:PYTHONPATH='src'; python -m odoo_finance_data_auditor.cli --sample-data data\sample --output reports\sample_exception_report.xlsx
-```
+## Portfolio Signal
 
-The generated workbook is safe to share when produced from the included sample data because it contains only representative sample ERP finance records.
+This project demonstrates:
 
-## Screenshots
-
-Screenshots are not generated automatically. To capture portfolio screenshots manually:
-
-1. Run the dashboard:
-
-```powershell
-$env:PYTHONPATH='src'; streamlit run app.py
-```
-
-2. Open [http://localhost:8501](http://localhost:8501/).
-3. Capture:
-   - dashboard overview and KPI cards
-   - risk and issue breakdowns
-   - detailed exception review table with recommended actions
-   - Excel workbook `Summary` sheet
-   - Excel workbook `Exceptions` sheet
-
-Suggested screenshot files can be placed under `docs/screenshots/`.
+- finance systems judgement across close readiness, tax evidence, reconciliation, inventory valuation, and ERP cleanup
+- Odoo and ERP accounting data understanding
+- audit-style exception reporting with recommended actions
+- automated validation discipline with positive and negative pytest coverage
+- CI/CD-backed delivery with repeatable smoke tests
+- practical finance engineering for Odoo Functional Consultant, ERP Business Analyst, Finance Systems Analyst, and Accounting Systems Consultant roles
 
 ## Roadmap
 
@@ -132,13 +142,3 @@ Suggested screenshot files can be placed under `docs/screenshots/`.
 - Odoo API connector
 - scheduled exception emails
 - AI-assisted remediation notes
-
-## Release Readiness
-
-The package version is currently `0.1.0`, suitable for a first MVP portfolio release and a later `v0.1.0` git tag.
-
-## Sample Data And Privacy
-
-This repository includes synthetic sample data for demonstration and testing purposes. The sample files are designed to resemble common Odoo finance exports, but they do not contain employer, client, or production data.
-
-Generated reports are written under `reports/` and ignored by git, except for `reports/.gitkeep`.
