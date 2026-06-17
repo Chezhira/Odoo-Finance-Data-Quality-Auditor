@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
 from odoo_finance_data_auditor.dashboard import (
     apply_exception_filters,
     build_kpis,
+    chart_height,
     count_by_dimension,
     friendly_source_model,
     load_dashboard_results,
@@ -119,28 +121,28 @@ def main() -> None:
         '<div class="section-note">Use these views to see where cleanup effort is concentrated by risk, issue type, and source model.</div>',
         unsafe_allow_html=True,
     )
-    left, middle, right = st.columns([1, 1.45, 1.1])
+    left, right = st.columns([0.85, 1.65])
     with left:
         st.subheader("Risk Concentration")
-        _horizontal_bar_chart(
+        _vertical_bar_chart(
             count_by_dimension(filtered, "risk_level", "Risk", risk_order=True),
             label_column="Risk",
-            height=230,
+            height=260,
         )
-    with middle:
+    with right:
         st.subheader("Top Exception Types")
         _horizontal_bar_chart(
             count_by_dimension(filtered, "issue_type", "Issue Type"),
             label_column="Issue Type",
-            height=390,
+            height=chart_height(filtered["issue_type"].nunique(), base=70, row_height=30, maximum=430),
         )
-    with right:
-        st.subheader("Affected ERP Areas")
-        _horizontal_bar_chart(
-            count_by_dimension(filtered, "source_model", "ERP Area", friendly_labels=True),
-            label_column="ERP Area",
-            height=300,
-        )
+
+    st.subheader("Affected ERP Areas")
+    _horizontal_bar_chart(
+        count_by_dimension(filtered, "source_model", "ERP Area", friendly_labels=True),
+        label_column="ERP Area",
+        height=chart_height(filtered["source_model"].nunique(), base=80, row_height=36, maximum=320),
+    )
 
     st.subheader("Exception Review")
     st.markdown(
@@ -218,15 +220,51 @@ def _horizontal_bar_chart(rows: pd.DataFrame, label_column: str, height: int) ->
         st.info("No exceptions match the current filters.")
         return
 
-    chart_rows = rows.sort_values("exception_count", ascending=True)
-    st.bar_chart(
-        chart_rows,
-        x="exception_count",
-        y=label_column,
-        horizontal=True,
-        height=height,
-        use_container_width=True,
+    chart = (
+        alt.Chart(rows)
+        .mark_bar(cornerRadiusEnd=3, color="#2563eb")
+        .encode(
+            x=alt.X("exception_count:Q", title="Exceptions", axis=alt.Axis(format="d", grid=True)),
+            y=alt.Y(
+                f"{label_column}:N",
+                sort="-x",
+                title=None,
+                axis=alt.Axis(labelLimit=420, labelPadding=8),
+            ),
+            tooltip=[
+                alt.Tooltip(f"{label_column}:N", title=label_column),
+                alt.Tooltip("exception_count:Q", title="Exceptions", format="d"),
+            ],
+        )
+        .properties(height=height)
     )
+    st.altair_chart(chart, use_container_width=True)
+
+
+def _vertical_bar_chart(rows: pd.DataFrame, label_column: str, height: int) -> None:
+    if rows.empty:
+        st.info("No exceptions match the current filters.")
+        return
+
+    chart = (
+        alt.Chart(rows)
+        .mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3, color="#2563eb")
+        .encode(
+            x=alt.X(
+                f"{label_column}:N",
+                sort=None,
+                title=None,
+                axis=alt.Axis(labelAngle=0, labelPadding=8),
+            ),
+            y=alt.Y("exception_count:Q", title="Exceptions", axis=alt.Axis(format="d", grid=True)),
+            tooltip=[
+                alt.Tooltip(f"{label_column}:N", title=label_column),
+                alt.Tooltip("exception_count:Q", title="Exceptions", format="d"),
+            ],
+        )
+        .properties(height=height)
+    )
+    st.altair_chart(chart, use_container_width=True)
 
 
 if __name__ == "__main__":

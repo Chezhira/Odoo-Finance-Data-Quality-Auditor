@@ -100,3 +100,7 @@ def count_by_dimension(
         else counts[column].astype(str)
     )
     return counts[[label_column, "exception_count"]]
+
+
+def chart_height(row_count: int, base: int = 80, row_height: int = 34, maximum: int = 420) -> int:
+    return min(max(base + (row_count * row_height), 180), maximum)

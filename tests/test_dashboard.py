@@ -7,6 +7,7 @@ from openpyxl import load_workbook
 from odoo_finance_data_auditor.dashboard import (
     apply_exception_filters,
     build_kpis,
+    chart_height,
     count_by_dimension,
     friendly_source_model,
     load_dashboard_results,
@@ -66,6 +67,11 @@ def test_count_by_dimension_sorts_issue_types_and_formats_sources(sample_data_di
     assert issue_counts.iloc[0]["exception_count"] == 2
     assert "Vendor Bills" in source_counts["ERP Area"].tolist()
     assert "Journal Entries" in source_counts["ERP Area"].tolist()
+
+
+def test_chart_height_scales_with_bounds():
+    assert chart_height(1) == 180
+    assert chart_height(20) == 420
 
 
 def test_dashboard_workbook_bytes_are_excel_file(sample_data_dir):
