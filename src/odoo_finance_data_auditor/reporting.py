@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import BinaryIO
 
 import pandas as pd
 from openpyxl.styles import Font
@@ -30,23 +31,29 @@ def exceptions_to_dataframe(exceptions: list[AuditException]) -> pd.DataFrame:
 
 def export_exception_report(exceptions: list[AuditException], output_path: Path) -> Path:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    exception_rows = exceptions_to_dataframe(exceptions)
+    write_exception_workbook(exceptions_to_dataframe(exceptions), output_path)
 
-    summary = (
+    return output_path
+
+
+def write_exception_workbook(exception_rows: pd.DataFrame, output: Path | str | BinaryIO) -> None:
+    summary = exception_summary(exception_rows)
+
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        summary.to_excel(writer, sheet_name="Summary", index=False)
+        exception_rows.to_excel(writer, sheet_name="Exceptions", index=False)
+        for worksheet in writer.book.worksheets:
+            _format_worksheet(worksheet)
+
+
+def exception_summary(exception_rows: pd.DataFrame) -> pd.DataFrame:
+    return (
         exception_rows.groupby(["risk_level", "issue_type"], dropna=False)
         .size()
         .reset_index(name="exception_count")
         if not exception_rows.empty
         else pd.DataFrame(columns=["risk_level", "issue_type", "exception_count"])
     )
-
-    with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
-        summary.to_excel(writer, sheet_name="Summary", index=False)
-        exception_rows.to_excel(writer, sheet_name="Exceptions", index=False)
-        for worksheet in writer.book.worksheets:
-            _format_worksheet(worksheet)
-
-    return output_path
 
 
 def _format_worksheet(worksheet) -> None:

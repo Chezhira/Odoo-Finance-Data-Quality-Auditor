@@ -1,12 +1,13 @@
 [project]
 name = "odoo-finance-data-auditor"
 version = "0.1.0"
-description = "Synthetic CSV-first finance data quality checks for Odoo-style exports."
+description = "Finance controls and audit-readiness checks for Odoo-compatible accounting exports."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "openpyxl>=3.1.0",
     "pandas>=2.2.0",
+    "streamlit>=1.36.0",
 ]
 
 [project.optional-dependencies]
