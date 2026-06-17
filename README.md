@@ -13,6 +13,13 @@ Finance teams often need a fast way to assess close readiness before month-end r
 - reconciliation follow-up for aged unreconciled bank lines
 - ERP data quality review for analytics, FX metadata, and duplicate references
 
+## Target Users
+
+- finance systems analysts reviewing ERP data quality before close
+- Odoo functional consultants validating accounting configuration and cleanup needs
+- ERP business analysts preparing audit-readiness or reconciliation follow-up packs
+- accounting systems consultants assessing controls, evidence, and exception remediation
+
 ## Portfolio Signal
 
 This project demonstrates finance systems judgement and practical engineering delivery across:
@@ -59,12 +66,13 @@ Run it with:
 $env:PYTHONPATH='src'; streamlit run app.py
 ```
 
+Open [http://localhost:8501](http://localhost:8501/) after the server starts.
+
 ## CLI Usage
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
-.\.venv\Scripts\python.exe -m pytest --basetemp .pytest-tmp
 $env:PYTHONPATH='src'; python -m odoo_finance_data_auditor.cli --sample-data data\sample --output reports\sample_exception_report.xlsx
 ```
 
@@ -74,6 +82,60 @@ The CLI writes an Excel exception review workbook with:
 - `Exceptions`: check name, risk level, entity, source model, record ID, issue type, date, amount, recommended action, message, check ID, and metadata
 
 With the included sample data, the CLI currently runs 10 checks and produces 13 intentionally triggered exceptions.
+
+## Testing And CI
+
+Run the test suite with:
+
+```powershell
+python -m pytest --basetemp .pytest-tmp
+```
+
+The repository includes a GitHub Actions workflow that installs the package, runs pytest, and performs a sample-data CLI smoke test so the validation engine and workbook export stay release-ready.
+
+## Sample Output
+
+Binary Excel outputs are intentionally ignored by git through `reports/*.xlsx`. This keeps the public repository lightweight and avoids committing local report artifacts.
+
+Regenerate the sample exception workbook at any time with:
+
+```powershell
+$env:PYTHONPATH='src'; python -m odoo_finance_data_auditor.cli --sample-data data\sample --output reports\sample_exception_report.xlsx
+```
+
+The generated workbook is safe to share when produced from the included sample data because it contains only representative sample ERP finance records.
+
+## Screenshots
+
+Screenshots are not generated automatically. To capture portfolio screenshots manually:
+
+1. Run the dashboard:
+
+```powershell
+$env:PYTHONPATH='src'; streamlit run app.py
+```
+
+2. Open [http://localhost:8501](http://localhost:8501/).
+3. Capture:
+   - dashboard overview and KPI cards
+   - risk and issue breakdowns
+   - detailed exception review table with recommended actions
+   - Excel workbook `Summary` sheet
+   - Excel workbook `Exceptions` sheet
+
+Suggested screenshot files can be placed under `docs/screenshots/`.
+
+## Roadmap
+
+- configurable rule thresholds
+- company-specific rule profiles
+- Odoo API connector
+- scheduled exception emails
+- AI-assisted remediation notes
+
+## Release Readiness
+
+The package version is currently `0.1.0`, suitable for a first MVP portfolio release and a later `v0.1.0` git tag.
 
 ## Sample Data And Privacy
 
