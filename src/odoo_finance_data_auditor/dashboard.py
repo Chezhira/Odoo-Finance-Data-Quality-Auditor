@@ -104,3 +104,7 @@ def count_by_dimension(
 
 def chart_height(row_count: int, base: int = 80, row_height: int = 34, maximum: int = 420) -> int:
     return min(max(base + (row_count * row_height), 180), maximum)
+
+
+def integer_tick_values(max_count: int) -> list[int]:
+    return list(range(0, max(int(max_count), 0) + 1))

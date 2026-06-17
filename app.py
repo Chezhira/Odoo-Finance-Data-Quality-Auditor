@@ -12,6 +12,7 @@ from odoo_finance_data_auditor.dashboard import (
     chart_height,
     count_by_dimension,
     friendly_source_model,
+    integer_tick_values,
     load_dashboard_results,
     workbook_bytes,
 )
@@ -220,11 +221,17 @@ def _horizontal_bar_chart(rows: pd.DataFrame, label_column: str, height: int) ->
         st.info("No exceptions match the current filters.")
         return
 
+    tick_values = integer_tick_values(rows["exception_count"].max())
     chart = (
         alt.Chart(rows)
         .mark_bar(cornerRadiusEnd=3, color="#2563eb")
         .encode(
-            x=alt.X("exception_count:Q", title="Exceptions", axis=alt.Axis(format="d", grid=True)),
+            x=alt.X(
+                "exception_count:Q",
+                title="Exceptions",
+                axis=alt.Axis(format="d", grid=True, values=tick_values),
+                scale=alt.Scale(domain=[0, max(tick_values)]),
+            ),
             y=alt.Y(
                 f"{label_column}:N",
                 sort="-x",
@@ -246,6 +253,7 @@ def _vertical_bar_chart(rows: pd.DataFrame, label_column: str, height: int) -> N
         st.info("No exceptions match the current filters.")
         return
 
+    tick_values = integer_tick_values(rows["exception_count"].max())
     chart = (
         alt.Chart(rows)
         .mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3, color="#2563eb")
@@ -256,7 +264,12 @@ def _vertical_bar_chart(rows: pd.DataFrame, label_column: str, height: int) -> N
                 title=None,
                 axis=alt.Axis(labelAngle=0, labelPadding=8),
             ),
-            y=alt.Y("exception_count:Q", title="Exceptions", axis=alt.Axis(format="d", grid=True)),
+            y=alt.Y(
+                "exception_count:Q",
+                title="Exceptions",
+                axis=alt.Axis(format="d", grid=True, values=tick_values),
+                scale=alt.Scale(domain=[0, max(tick_values)]),
+            ),
             tooltip=[
                 alt.Tooltip(f"{label_column}:N", title=label_column),
                 alt.Tooltip("exception_count:Q", title="Exceptions", format="d"),

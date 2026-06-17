@@ -10,6 +10,7 @@ from odoo_finance_data_auditor.dashboard import (
     chart_height,
     count_by_dimension,
     friendly_source_model,
+    integer_tick_values,
     load_dashboard_results,
     workbook_bytes,
 )
@@ -72,6 +73,11 @@ def test_count_by_dimension_sorts_issue_types_and_formats_sources(sample_data_di
 def test_chart_height_scales_with_bounds():
     assert chart_height(1) == 180
     assert chart_height(20) == 420
+
+
+def test_integer_tick_values_cover_whole_number_counts():
+    assert integer_tick_values(2) == [0, 1, 2]
+    assert integer_tick_values(5) == [0, 1, 2, 3, 4, 5]
 
 
 def test_dashboard_workbook_bytes_are_excel_file(sample_data_dir):
