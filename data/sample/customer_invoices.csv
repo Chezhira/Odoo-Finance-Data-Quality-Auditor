@@ -1,0 +1,4 @@
+invoice_id,customer_id,customer_name,invoice_date,state,reference,total_amount,tax_code
+CI001,C001,Alpine Retail,2026-04-01,posted,SO-100,1500,VAT20
+CI002,C002,Beacon Wholesale,2026-04-02,posted,SO-101,900,
+CI003,C003,Cascade Trading,2026-04-03,draft,SO-102,400,

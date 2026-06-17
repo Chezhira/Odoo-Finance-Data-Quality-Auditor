@@ -1,0 +1,4 @@
+valuation_id,date,product_id,product_name,quantity,value,source_document
+IV001,2026-04-01,P001,Desk Chair,10,850,WH/IN/001
+IV002,2026-04-02,P002,Monitor Arm,-2,120,WH/OUT/010
+IV003,2026-04-03,P003,Keyboard,5,-75,WH/ADJ/004

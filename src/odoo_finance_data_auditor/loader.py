@@ -6,7 +6,7 @@ import pandas as pd
 
 
 REQUIRED_COLUMNS: dict[str, set[str]] = {
-    "accounts": {"account_id", "code", "name", "type", "active", "is_suspense"},
+    "accounts": {"account_id", "code", "name", "type", "active", "is_suspense", "is_deprecated"},
     "journal_entries": {
         "entry_id",
         "line_id",
@@ -28,6 +28,18 @@ REQUIRED_COLUMNS: dict[str, set[str]] = {
         "state",
         "reference",
         "total_amount",
+        "tax_evidence_document",
+        "tax_registration",
+    },
+    "customer_invoices": {
+        "invoice_id",
+        "customer_id",
+        "customer_name",
+        "invoice_date",
+        "state",
+        "reference",
+        "total_amount",
+        "tax_code",
     },
     "bank_statement_lines": {
         "line_id",
@@ -36,6 +48,15 @@ REQUIRED_COLUMNS: dict[str, set[str]] = {
         "description",
         "amount",
         "is_reconciled",
+    },
+    "inventory_valuation": {
+        "valuation_id",
+        "date",
+        "product_id",
+        "product_name",
+        "quantity",
+        "value",
+        "source_document",
     },
 }
 

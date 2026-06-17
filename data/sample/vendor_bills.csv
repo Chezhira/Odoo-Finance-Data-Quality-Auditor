@@ -1,5 +1,7 @@
-bill_id,vendor_id,vendor_name,bill_date,state,reference,total_amount
-VB001,V001,Northwind Supplies,2026-04-02,posted,INV-100,1200
-VB002,V001,Northwind Supplies,2026-04-03,posted,INV-100,1250
-VB003,V002,Blue River Services,2026-04-04,posted,INV-100,800
-VB004,V003,Contoso Office,2026-04-05,draft,INV-200,300
+bill_id,vendor_id,vendor_name,bill_date,state,reference,total_amount,tax_evidence_document,tax_registration
+VB001,V001,Northwind Supplies,2026-04-02,posted,INV-100,1200,supplier-inv-100.pdf,GB123456789
+VB002,V001,Northwind Supplies,2026-04-03,posted,INV-100,1250,supplier-inv-100-copy.pdf,GB123456789
+VB003,V002,Blue River Services,2026-04-04,posted,INV-100,800,blue-river-inv-100.pdf,GB987654321
+VB004,V003,Contoso Office,2026-04-05,draft,INV-200,300,,
+VB005,V004,Fabrikam VAT Services,2026-04-06,posted,INV-300,640,,GB555555555
+VB006,V005,Adventure Works Supplies,2026-04-07,posted,INV-301,720,adventure-inv-301.pdf,

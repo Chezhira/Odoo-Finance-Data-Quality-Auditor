@@ -9,7 +9,14 @@ from odoo_finance_data_auditor.loader import SchemaValidationError, load_csv_exp
 def test_load_sample_csv_exports(sample_data_dir):
     data = load_csv_exports(sample_data_dir)
 
-    assert set(data) == {"accounts", "journal_entries", "vendor_bills", "bank_statement_lines"}
+    assert set(data) == {
+        "accounts",
+        "journal_entries",
+        "vendor_bills",
+        "customer_invoices",
+        "bank_statement_lines",
+        "inventory_valuation",
+    }
 
 
 def test_validate_schemas_reports_missing_columns(sample_data):

@@ -19,7 +19,7 @@ def main() -> None:
     exceptions = run_all_rules(data, AuditConfig())
     export_exception_report(exceptions, args.output)
 
-    print(f"Ran 3 checks and found {len(exceptions)} exceptions.")
+    print(f"Ran 7 checks and found {len(exceptions)} exceptions.")
     print(f"Exception report written to {args.output}")
 
 
