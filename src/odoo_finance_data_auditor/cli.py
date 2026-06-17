@@ -6,7 +6,7 @@ from pathlib import Path
 from odoo_finance_data_auditor.config import AuditConfig
 from odoo_finance_data_auditor.loader import load_csv_exports
 from odoo_finance_data_auditor.reporting import export_exception_report
-from odoo_finance_data_auditor.rules import run_all_rules
+from odoo_finance_data_auditor.rules import CHECK_REGISTRY, run_all_rules
 
 
 def main() -> None:
@@ -19,7 +19,7 @@ def main() -> None:
     exceptions = run_all_rules(data, AuditConfig())
     export_exception_report(exceptions, args.output)
 
-    print(f"Ran 7 checks and found {len(exceptions)} exceptions.")
+    print(f"Ran {len(CHECK_REGISTRY)} checks and found {len(exceptions)} exceptions.")
     print(f"Exception report written to {args.output}")
 
 

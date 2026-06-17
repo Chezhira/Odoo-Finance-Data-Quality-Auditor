@@ -5,6 +5,7 @@ import pandas as pd
 from odoo_finance_data_auditor.config import AuditConfig
 from odoo_finance_data_auditor.reporting import export_exception_report
 from odoo_finance_data_auditor.rules import (
+    CHECK_REGISTRY,
     customer_invoices_missing_tax_codes,
     duplicate_vendor_bill_references,
     negative_inventory_valuation_records,
@@ -14,6 +15,24 @@ from odoo_finance_data_auditor.rules import (
     unreconciled_old_bank_lines,
     vendor_bills_missing_tax_evidence,
 )
+
+
+def test_check_registry_contains_metadata_for_current_rules():
+    assert len(CHECK_REGISTRY) == 7
+    assert [check.check_id for check in CHECK_REGISTRY] == [
+        "FIN-001",
+        "FIN-002",
+        "FIN-003",
+        "FIN-004",
+        "FIN-005",
+        "FIN-006",
+        "FIN-007",
+    ]
+    assert all(check.name for check in CHECK_REGISTRY)
+    assert all(check.description for check in CHECK_REGISTRY)
+    assert all(check.risk_level in {"high", "medium", "low"} for check in CHECK_REGISTRY)
+    assert all(check.source_model for check in CHECK_REGISTRY)
+    assert all(check.recommended_action for check in CHECK_REGISTRY)
 
 
 def test_suspense_after_close_date_flags_only_posted_late_suspense(sample_data):
@@ -116,3 +135,28 @@ def test_run_all_rules_and_export_report(sample_data, tmp_path):
     assert output_path.exists()
     workbook = pd.ExcelFile(output_path)
     assert workbook.sheet_names == ["Summary", "Exceptions"]
+
+
+def test_export_report_uses_business_facing_columns(sample_data, tmp_path):
+    exceptions = run_all_rules(sample_data, AuditConfig())
+    output_path = tmp_path / "exception_report.xlsx"
+
+    export_exception_report(exceptions, output_path)
+
+    summary = pd.read_excel(output_path, sheet_name="Summary")
+    exception_rows = pd.read_excel(output_path, sheet_name="Exceptions")
+
+    assert list(summary.columns) == ["risk_level", "issue_type", "exception_count"]
+    assert set(summary["risk_level"]) == {"high", "medium"}
+    assert exception_rows.columns[:9].tolist() == [
+        "check_name",
+        "risk_level",
+        "entity",
+        "source_model",
+        "record_id",
+        "issue_type",
+        "date",
+        "amount",
+        "recommended_action",
+    ]
+    assert exception_rows["recommended_action"].notna().all()

@@ -7,12 +7,15 @@ from typing import Any
 
 @dataclass(frozen=True)
 class AuditException:
-    rule_id: str
-    rule_name: str
-    severity: str
-    source: str
+    check_id: str
+    check_name: str
+    risk_level: str
+    source_model: str
+    entity: str
     record_id: str
+    issue_type: str
     message: str
+    recommended_action: str
     amount: float | None = None
     date: date | None = None
     metadata: dict[str, Any] | None = None
