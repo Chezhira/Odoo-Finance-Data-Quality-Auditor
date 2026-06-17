@@ -7,6 +7,8 @@
 
 A finance controls and audit-readiness tool for reviewing Odoo-compatible accounting exports. The project validates ERP finance data, flags control exceptions, and produces an Excel exception workbook for finance, audit, and systems cleanup workflows.
 
+Live demo: [https://odoo-finance-data-quality-auditor.streamlit.app/](https://odoo-finance-data-quality-auditor.streamlit.app/)
+
 ## Why It Matters
 
 Finance teams need a practical way to assess close readiness, audit trail quality, reconciliation follow-up, tax evidence gaps, inventory valuation issues, and ERP cleanup priorities. This project turns representative ERP finance data extracts into a structured exception review that can be used by finance, audit, and systems teams.
@@ -29,7 +31,7 @@ Finance teams need a practical way to assess close readiness, audit trail qualit
 
 ## Screenshots
 
-The screenshots below are generated from the included sample data.
+The screenshots below show the bundled sample-data workflow. The deployed app also supports CSV upload mode for Odoo-compatible accounting exports.
 
 ### Dashboard Overview
 
@@ -70,11 +72,17 @@ Each check is defined in a central registry with its name, description, risk lev
 
 The Streamlit dashboard provides a finance control tower style review screen for ERP data quality and audit-readiness review. It includes:
 
+- a default bundled sample-data mode for exploring the dashboard immediately
+- an upload mode for running checks against Odoo-compatible CSV exports
 - KPI cards for checks run, exceptions found, high-risk exceptions, and issue types
 - risk concentration, top exception type, and affected ERP area breakdowns
 - filters for risk level, issue type, and ERP area
 - detailed exception review with recommended remediation actions
 - Excel workbook download for the current filtered exception population
+
+Open the live dashboard:
+
+[https://odoo-finance-data-quality-auditor.streamlit.app/](https://odoo-finance-data-quality-auditor.streamlit.app/)
 
 Run the dashboard with:
 
@@ -83,6 +91,23 @@ $env:PYTHONPATH='src'; streamlit run app.py
 ```
 
 Then open [http://localhost:8501](http://localhost:8501/).
+
+### Dashboard Data Modes
+
+**Sample data mode** uses bundled sample ERP finance exports so reviewers can explore the workflow safely. This mode currently runs 10 checks and produces 13 exceptions.
+
+**CSV upload mode** allows users to upload Odoo-compatible CSV files. It runs the same validation engine and produces the same KPI cards, control breakdowns, exception review table, and Excel exception workbook.
+
+Upload mode expects these filenames:
+
+- `accounts.csv`
+- `journal_entries.csv`
+- `vendor_bills.csv`
+- `customer_invoices.csv`
+- `inventory_valuation.csv`
+- `bank_statement_lines.csv`
+
+The app matches uploaded files by filename and shows which required files are still missing before running the audit.
 
 ## Excel Exception Workbook
 
@@ -120,7 +145,9 @@ The GitHub Actions workflow installs the package, runs pytest, and performs a sa
 
 ## Sample Data And Privacy
 
-This repository includes synthetic sample data for demonstration and testing purposes. The sample files are designed to resemble common Odoo finance exports, but they do not contain employer, client, or production data.
+The public Streamlit deployment is intended for demonstration and portfolio review. Use the bundled sample data to explore the workflow. If testing upload mode, do not upload confidential client, employer, or production data.
+
+Uploaded files are processed for the active session. This repository includes synthetic sample data for demonstration and testing purposes; the sample files are designed to resemble common Odoo finance exports, but they do not contain employer, client, or production data.
 
 Generated reports are written under `reports/` and ignored by git, except for `reports/.gitkeep`.
 

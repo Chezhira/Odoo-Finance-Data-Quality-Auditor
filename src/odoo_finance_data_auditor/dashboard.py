@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 from odoo_finance_data_auditor.config import AuditConfig
-from odoo_finance_data_auditor.loader import load_csv_exports
+from odoo_finance_data_auditor.loader import REQUIRED_COLUMNS, load_csv_exports, validate_schemas
 from odoo_finance_data_auditor.reporting import exceptions_to_dataframe, write_exception_workbook
 from odoo_finance_data_auditor.rules import CHECK_REGISTRY, run_all_rules
 
@@ -19,11 +19,75 @@ SOURCE_MODEL_LABELS = {
     "bank_statement_lines": "Bank Statement Lines",
 }
 
+REQUIRED_UPLOAD_DATASETS = (
+    "accounts",
+    "journal_entries",
+    "vendor_bills",
+    "customer_invoices",
+    "inventory_valuation",
+    "bank_statement_lines",
+)
+
 
 def load_dashboard_results(sample_data_dir: Path) -> tuple[list[object], pd.DataFrame]:
     data = load_csv_exports(sample_data_dir)
+    return run_dashboard_results(data)
+
+
+def run_dashboard_results(data: dict[str, pd.DataFrame]) -> tuple[list[object], pd.DataFrame]:
     exceptions = run_all_rules(data, AuditConfig())
     return exceptions, exceptions_to_dataframe(exceptions)
+
+
+def required_csv_filenames() -> list[str]:
+    return [f"{dataset_name}.csv" for dataset_name in REQUIRED_UPLOAD_DATASETS]
+
+
+def match_uploaded_csv_files(uploaded_files: list[object] | None) -> dict[str, object]:
+    matched: dict[str, object] = {}
+    for uploaded_file in uploaded_files or []:
+        filename = Path(getattr(uploaded_file, "name", "")).name.lower()
+        if filename in required_csv_filenames():
+            matched[filename] = uploaded_file
+    return matched
+
+
+def missing_required_csv_files(matched_files: dict[str, object]) -> list[str]:
+    return [filename for filename in required_csv_filenames() if filename not in matched_files]
+
+
+def upload_status_rows(matched_files: dict[str, object]) -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "required_file": filename,
+                "status": "Uploaded" if filename in matched_files else "Missing",
+            }
+            for filename in required_csv_filenames()
+        ]
+    )
+
+
+def load_uploaded_csv_exports(uploaded_files: list[object] | None) -> dict[str, pd.DataFrame]:
+    matched_files = match_uploaded_csv_files(uploaded_files)
+    missing_files = missing_required_csv_files(matched_files)
+    if missing_files:
+        missing_list = ", ".join(missing_files)
+        raise FileNotFoundError(f"Missing required CSV files: {missing_list}")
+
+    data: dict[str, pd.DataFrame] = {}
+    for dataset_name in REQUIRED_COLUMNS:
+        uploaded_file = matched_files[f"{dataset_name}.csv"]
+        if hasattr(uploaded_file, "seek"):
+            uploaded_file.seek(0)
+        data[dataset_name] = pd.read_csv(uploaded_file)
+
+    validate_schemas(data)
+    return data
+
+
+def load_uploaded_dashboard_results(uploaded_files: list[object] | None) -> tuple[list[object], pd.DataFrame]:
+    return run_dashboard_results(load_uploaded_csv_exports(uploaded_files))
 
 
 def build_kpis(exception_rows: pd.DataFrame) -> dict[str, int]:

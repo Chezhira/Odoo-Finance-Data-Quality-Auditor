@@ -3,6 +3,7 @@ from __future__ import annotations
 from io import BytesIO
 
 from openpyxl import load_workbook
+import pytest
 
 from odoo_finance_data_auditor.dashboard import (
     apply_exception_filters,
@@ -11,9 +12,15 @@ from odoo_finance_data_auditor.dashboard import (
     count_by_dimension,
     friendly_source_model,
     integer_tick_values,
+    load_uploaded_csv_exports,
     load_dashboard_results,
+    match_uploaded_csv_files,
+    missing_required_csv_files,
+    required_csv_filenames,
+    upload_status_rows,
     workbook_bytes,
 )
+from odoo_finance_data_auditor.loader import SchemaValidationError
 
 
 def test_dashboard_results_load_registered_checks(sample_data_dir):
@@ -88,3 +95,75 @@ def test_dashboard_workbook_bytes_are_excel_file(sample_data_dir):
     assert payload[:2] == b"PK"
     workbook = load_workbook(filename=BytesIO(payload))
     assert workbook.sheetnames == ["Summary", "Exceptions"]
+
+
+class NamedBytesIO(BytesIO):
+    def __init__(self, name: str, payload: bytes):
+        super().__init__(payload)
+        self.name = name
+
+
+def test_required_csv_filenames_match_expected_upload_contract():
+    assert required_csv_filenames() == [
+        "accounts.csv",
+        "journal_entries.csv",
+        "vendor_bills.csv",
+        "customer_invoices.csv",
+        "inventory_valuation.csv",
+        "bank_statement_lines.csv",
+    ]
+
+
+def test_uploaded_file_matching_uses_required_filenames_only():
+    uploaded_files = [
+        NamedBytesIO("accounts.csv", b""),
+        NamedBytesIO("notes.csv", b""),
+        NamedBytesIO("JOURNAL_ENTRIES.csv", b""),
+    ]
+
+    matched = match_uploaded_csv_files(uploaded_files)
+
+    assert set(matched) == {"accounts.csv", "journal_entries.csv"}
+    assert missing_required_csv_files(matched) == [
+        "vendor_bills.csv",
+        "customer_invoices.csv",
+        "inventory_valuation.csv",
+        "bank_statement_lines.csv",
+    ]
+
+
+def test_upload_status_rows_marks_uploaded_and_missing_files():
+    rows = upload_status_rows({"accounts.csv": object()})
+
+    assert rows.loc[rows["required_file"].eq("accounts.csv"), "status"].item() == "Uploaded"
+    assert rows.loc[rows["required_file"].eq("vendor_bills.csv"), "status"].item() == "Missing"
+
+
+def test_load_uploaded_csv_exports_reads_complete_sample_set(sample_data_dir):
+    uploaded_files = [
+        NamedBytesIO(path.name, path.read_bytes())
+        for path in sample_data_dir.glob("*.csv")
+    ]
+
+    data = load_uploaded_csv_exports(uploaded_files)
+
+    assert set(data) == {
+        "accounts",
+        "journal_entries",
+        "vendor_bills",
+        "customer_invoices",
+        "bank_statement_lines",
+        "inventory_valuation",
+    }
+
+
+def test_load_uploaded_csv_exports_rejects_invalid_columns(sample_data_dir):
+    uploaded_files = [
+        NamedBytesIO(path.name, path.read_bytes())
+        for path in sample_data_dir.glob("*.csv")
+        if path.name != "accounts.csv"
+    ]
+    uploaded_files.append(NamedBytesIO("accounts.csv", b"account_id,code\n1000,1000\n"))
+
+    with pytest.raises(SchemaValidationError, match="accounts.csv missing required columns"):
+        load_uploaded_csv_exports(uploaded_files)

@@ -21,8 +21,14 @@ from odoo_finance_data_auditor.dashboard import (
     friendly_source_model,
     integer_tick_values,
     load_dashboard_results,
+    load_uploaded_dashboard_results,
+    match_uploaded_csv_files,
+    missing_required_csv_files,
+    required_csv_filenames,
+    upload_status_rows,
     workbook_bytes,
 )
+from odoo_finance_data_auditor.loader import SchemaValidationError
 from odoo_finance_data_auditor.rules import CHECK_REGISTRY
 
 
@@ -80,15 +86,22 @@ def main() -> None:
     )
 
     st.sidebar.header("Review Scope")
-    sample_data_dir = Path(
-        st.sidebar.text_input("ERP export folder", value=str(SAMPLE_DATA_DIR))
+    data_source_mode = st.sidebar.radio(
+        "Data source",
+        ["Use bundled sample data", "Upload CSV files"],
+        index=0,
     )
-    st.sidebar.caption("Uses the registered validation checks and produces the same exception workbook as the CLI.")
+    st.sidebar.caption("Both modes use the same registered validation checks and Excel workbook export.")
 
-    _, exception_rows = load_dashboard_results(sample_data_dir)
+    if data_source_mode == "Use bundled sample data":
+        sample_data_dir = Path(
+            st.sidebar.text_input("ERP export folder", value=str(SAMPLE_DATA_DIR))
+        )
+        _, exception_rows = load_dashboard_results(sample_data_dir)
+        st.caption(f"Loaded `{sample_data_dir}` and ran {len(CHECK_REGISTRY)} registered finance control checks.")
+    else:
+        exception_rows = _load_uploaded_exception_rows()
     kpis = build_kpis(exception_rows)
-
-    st.caption(f"Loaded `{sample_data_dir}` and ran {len(CHECK_REGISTRY)} registered finance control checks.")
 
     kpi_cols = st.columns(4)
     _kpi_card(kpi_cols[0], "Checks run", kpis["total_checks"])
@@ -253,6 +266,50 @@ def _horizontal_bar_chart(rows: pd.DataFrame, label_column: str, height: int) ->
         .properties(height=height)
     )
     st.altair_chart(chart, use_container_width=True)
+
+
+def _load_uploaded_exception_rows() -> pd.DataFrame:
+    st.subheader("Upload Odoo-Compatible CSV Exports")
+    st.markdown(
+        """
+        Use sample data to explore the dashboard, or upload Odoo-compatible CSV exports to run the checks against your own finance data.
+        Do not upload confidential production data to a public demo deployment.
+        """
+    )
+    uploaded_files = st.file_uploader(
+        "Upload required CSV files",
+        type=["csv"],
+        accept_multiple_files=True,
+        help=", ".join(required_csv_filenames()),
+    )
+    matched_files = match_uploaded_csv_files(uploaded_files)
+    missing_files = missing_required_csv_files(matched_files)
+
+    st.dataframe(
+        upload_status_rows(matched_files),
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "required_file": st.column_config.TextColumn("Required File"),
+            "status": st.column_config.TextColumn("Status"),
+        },
+    )
+
+    if missing_files:
+        st.warning(f"Upload all required files before running the audit. Missing: {', '.join(missing_files)}")
+        st.stop()
+
+    try:
+        _, exception_rows = load_uploaded_dashboard_results(uploaded_files)
+    except SchemaValidationError as exc:
+        st.error(f"Uploaded CSV schema validation failed: {exc}")
+        st.stop()
+    except Exception as exc:
+        st.error(f"Unable to read uploaded CSV files: {exc}")
+        st.stop()
+
+    st.caption(f"Loaded uploaded CSV files and ran {len(CHECK_REGISTRY)} registered finance control checks.")
+    return exception_rows
 
 
 def _vertical_bar_chart(rows: pd.DataFrame, label_column: str, height: int) -> None:
