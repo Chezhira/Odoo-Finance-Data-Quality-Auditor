@@ -8,10 +8,11 @@ import streamlit as st
 from odoo_finance_data_auditor.dashboard import (
     apply_exception_filters,
     build_kpis,
+    count_by_dimension,
+    friendly_source_model,
     load_dashboard_results,
     workbook_bytes,
 )
-from odoo_finance_data_auditor.reporting import exception_summary
 from odoo_finance_data_auditor.rules import CHECK_REGISTRY
 
 
@@ -52,6 +53,7 @@ def main() -> None:
             padding: 1rem;
             background: #f8fafc;
         }
+        div[data-testid="stHeadingWithActionElements"] h3 { font-size: 1.05rem; }
         </style>
         """,
         unsafe_allow_html=True,
@@ -103,9 +105,10 @@ def main() -> None:
         default=_sorted_unique(exception_rows, "issue_type"),
     )
     selected_sources = filter_cols[2].multiselect(
-        "Source model",
+        "ERP area",
         options=_sorted_unique(exception_rows, "source_model"),
         default=_sorted_unique(exception_rows, "source_model"),
+        format_func=friendly_source_model,
     )
 
     filtered = apply_exception_filters(exception_rows, selected_risks, selected_issues, selected_sources)
@@ -116,20 +119,28 @@ def main() -> None:
         '<div class="section-note">Use these views to see where cleanup effort is concentrated by risk, issue type, and source model.</div>',
         unsafe_allow_html=True,
     )
-    left, middle, right = st.columns(3)
+    left, middle, right = st.columns([1, 1.45, 1.1])
     with left:
-        st.subheader("Risk Level")
-        st.bar_chart(_count_by(filtered, "risk_level"))
+        st.subheader("Risk Concentration")
+        _horizontal_bar_chart(
+            count_by_dimension(filtered, "risk_level", "Risk", risk_order=True),
+            label_column="Risk",
+            height=230,
+        )
     with middle:
-        st.subheader("Issue Type")
-        st.dataframe(
-            exception_summary(filtered).sort_values("exception_count", ascending=False),
-            use_container_width=True,
-            hide_index=True,
+        st.subheader("Top Exception Types")
+        _horizontal_bar_chart(
+            count_by_dimension(filtered, "issue_type", "Issue Type"),
+            label_column="Issue Type",
+            height=390,
         )
     with right:
-        st.subheader("Source Model")
-        st.bar_chart(_count_by(filtered, "source_model"))
+        st.subheader("Affected ERP Areas")
+        _horizontal_bar_chart(
+            count_by_dimension(filtered, "source_model", "ERP Area", friendly_labels=True),
+            label_column="ERP Area",
+            height=300,
+        )
 
     st.subheader("Exception Review")
     st.markdown(
@@ -140,20 +151,24 @@ def main() -> None:
         "risk_level",
         "issue_type",
         "source_model",
+        "source_label",
         "record_id",
         "date",
         "amount",
         "recommended_action",
         "message",
     ]
+    review_rows = filtered.copy()
+    review_rows["source_label"] = review_rows["source_model"].map(friendly_source_model)
     st.dataframe(
-        filtered[review_columns].sort_values(["risk_level", "source_model", "record_id"]),
+        review_rows[review_columns].sort_values(["risk_level", "source_label", "record_id"]),
         use_container_width=True,
         hide_index=True,
         column_config={
             "risk_level": st.column_config.TextColumn("Risk"),
             "issue_type": st.column_config.TextColumn("Issue Type", width="medium"),
-            "source_model": st.column_config.TextColumn("Source Model"),
+            "source_model": None,
+            "source_label": st.column_config.TextColumn("ERP Area"),
             "record_id": st.column_config.TextColumn("Record ID"),
             "date": st.column_config.TextColumn("Date"),
             "amount": st.column_config.NumberColumn("Amount", format="%.2f"),
@@ -198,14 +213,20 @@ def _sorted_unique(rows: pd.DataFrame, column: str) -> list[str]:
     return sorted(rows[column].dropna().astype(str).unique().tolist())
 
 
-def _count_by(rows: pd.DataFrame, column: str) -> pd.DataFrame:
+def _horizontal_bar_chart(rows: pd.DataFrame, label_column: str, height: int) -> None:
     if rows.empty:
-        return pd.DataFrame({"count": []})
-    counts = rows[column].value_counts().rename_axis(column).reset_index(name="count")
-    if column == "risk_level":
-        order = {"high": 0, "medium": 1, "low": 2}
-        counts = counts.sort_values(by=column, key=lambda values: values.map(order).fillna(99))
-    return counts.set_index(column)
+        st.info("No exceptions match the current filters.")
+        return
+
+    chart_rows = rows.sort_values("exception_count", ascending=True)
+    st.bar_chart(
+        chart_rows,
+        x="exception_count",
+        y=label_column,
+        horizontal=True,
+        height=height,
+        use_container_width=True,
+    )
 
 
 if __name__ == "__main__":

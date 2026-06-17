@@ -11,6 +11,15 @@ from odoo_finance_data_auditor.reporting import exceptions_to_dataframe, write_e
 from odoo_finance_data_auditor.rules import CHECK_REGISTRY, run_all_rules
 
 
+SOURCE_MODEL_LABELS = {
+    "journal_entries": "Journal Entries",
+    "vendor_bills": "Vendor Bills",
+    "customer_invoices": "Customer Invoices",
+    "inventory_valuation": "Inventory Valuation",
+    "bank_statement_lines": "Bank Statement Lines",
+}
+
+
 def load_dashboard_results(sample_data_dir: Path) -> tuple[list[object], pd.DataFrame]:
     data = load_csv_exports(sample_data_dir)
     exceptions = run_all_rules(data, AuditConfig())
@@ -56,3 +65,38 @@ def workbook_bytes(exception_rows: pd.DataFrame) -> bytes:
     buffer = BytesIO()
     write_exception_workbook(exception_rows, buffer)
     return buffer.getvalue()
+
+
+def friendly_source_model(source_model: str) -> str:
+    return SOURCE_MODEL_LABELS.get(source_model, source_model.replace("_", " ").title())
+
+
+def count_by_dimension(
+    exception_rows: pd.DataFrame,
+    column: str,
+    label_column: str,
+    friendly_labels: bool = False,
+    risk_order: bool = False,
+) -> pd.DataFrame:
+    if exception_rows.empty:
+        return pd.DataFrame(columns=[label_column, "exception_count"])
+
+    counts = (
+        exception_rows[column]
+        .value_counts()
+        .rename_axis(column)
+        .reset_index(name="exception_count")
+    )
+
+    if risk_order:
+        order = {"high": 0, "medium": 1, "low": 2}
+        counts = counts.sort_values(by=column, key=lambda values: values.map(order).fillna(99))
+    else:
+        counts = counts.sort_values(["exception_count", column], ascending=[False, True])
+
+    counts[label_column] = (
+        counts[column].map(friendly_source_model)
+        if friendly_labels
+        else counts[column].astype(str)
+    )
+    return counts[[label_column, "exception_count"]]
