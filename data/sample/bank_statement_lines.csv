@@ -1,0 +1,4 @@
+line_id,date,bank_account,description,amount,is_reconciled
+BNK001,2026-02-10,Main Bank,Unmatched receipt,450,false
+BNK002,2026-04-08,Main Bank,Recent card settlement,120,false
+BNK003,2026-01-15,Main Bank,Matched supplier payment,-300,true

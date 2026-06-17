@@ -1,0 +1,5 @@
+bill_id,vendor_id,vendor_name,bill_date,state,reference,total_amount
+VB001,V001,Northwind Supplies,2026-04-02,posted,INV-100,1200
+VB002,V001,Northwind Supplies,2026-04-03,posted,INV-100,1250
+VB003,V002,Blue River Services,2026-04-04,posted,INV-100,800
+VB004,V003,Contoso Office,2026-04-05,draft,INV-200,300

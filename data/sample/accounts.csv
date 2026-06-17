@@ -1,0 +1,5 @@
+account_id,code,name,type,active,is_suspense
+1000,1000,Cash,asset,true,false
+2000,2000,Trade Payables,liability,true,false
+2999,2999,Suspense Clearing,liability,true,true
+6000,6000,Office Supplies,expense,true,false

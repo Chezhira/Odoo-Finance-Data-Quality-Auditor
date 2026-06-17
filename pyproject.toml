@@ -1,0 +1,26 @@
+[project]
+name = "odoo-finance-data-auditor"
+version = "0.1.0"
+description = "Synthetic CSV-first finance data quality checks for Odoo-style exports."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "openpyxl>=3.1.0",
+    "pandas>=2.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+odoo-finance-audit = "odoo_finance_data_auditor.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
