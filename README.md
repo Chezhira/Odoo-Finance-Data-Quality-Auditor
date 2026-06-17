@@ -13,6 +13,17 @@ Finance teams often need a fast way to assess close readiness before month-end r
 - reconciliation follow-up for aged unreconciled bank lines
 - ERP data quality review for analytics, FX metadata, and duplicate references
 
+## Portfolio Signal
+
+This project demonstrates finance systems judgement and practical engineering delivery across:
+
+- Odoo and ERP accounting data understanding
+- audit-style exception reporting and recommended actions
+- automated validation discipline with positive and negative pytest coverage
+- CI/CD-ready project structure and repeatable smoke tests
+- finance controls thinking across close readiness, tax evidence, reconciliation, inventory valuation, and ERP cleanup
+- portfolio-ready delivery for Odoo Functional Consultant, ERP Business Analyst, Finance Systems Analyst, and Accounting Systems Consultant roles
+
 ## Current Checks
 
 The validation engine currently runs 10 registered checks:
@@ -39,6 +50,8 @@ The dashboard provides a finance control tower style review screen for sample ER
 - filters for risk level, issue type, and source model
 - a detailed exception review table with recommended actions
 - an Excel workbook download for the current filtered exception set
+
+The dashboard is intended for executive-facing audit-readiness review: a viewer can see the size of the exception population, where risk is concentrated, which source models need cleanup, and what remediation action is recommended.
 
 Run it with:
 
