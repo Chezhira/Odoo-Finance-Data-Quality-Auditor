@@ -6,7 +6,16 @@ import pandas as pd
 
 
 REQUIRED_COLUMNS: dict[str, set[str]] = {
-    "accounts": {"account_id", "code", "name", "type", "active", "is_suspense", "is_deprecated"},
+    "accounts": {
+        "account_id",
+        "code",
+        "name",
+        "type",
+        "active",
+        "is_suspense",
+        "is_deprecated",
+        "requires_analytic_tag",
+    },
     "journal_entries": {
         "entry_id",
         "line_id",
@@ -19,6 +28,10 @@ REQUIRED_COLUMNS: dict[str, set[str]] = {
         "reference",
         "debit",
         "credit",
+        "analytic_tags",
+        "is_foreign_currency",
+        "currency",
+        "fx_rate",
     },
     "vendor_bills": {
         "bill_id",

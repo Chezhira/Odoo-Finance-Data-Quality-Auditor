@@ -8,6 +8,9 @@ from odoo_finance_data_auditor.rules import (
     CHECK_REGISTRY,
     customer_invoices_missing_tax_codes,
     duplicate_vendor_bill_references,
+    fx_entries_missing_currency_or_rate_metadata,
+    manual_journals_above_threshold,
+    missing_analytic_tags_on_selected_accounts,
     negative_inventory_valuation_records,
     posted_entries_to_inactive_or_deprecated_accounts,
     run_all_rules,
@@ -18,7 +21,7 @@ from odoo_finance_data_auditor.rules import (
 
 
 def test_check_registry_contains_metadata_for_current_rules():
-    assert len(CHECK_REGISTRY) == 7
+    assert len(CHECK_REGISTRY) == 10
     assert [check.check_id for check in CHECK_REGISTRY] == [
         "FIN-001",
         "FIN-002",
@@ -27,6 +30,9 @@ def test_check_registry_contains_metadata_for_current_rules():
         "FIN-005",
         "FIN-006",
         "FIN-007",
+        "FIN-008",
+        "FIN-009",
+        "FIN-010",
     ]
     assert all(check.name for check in CHECK_REGISTRY)
     assert all(check.description for check in CHECK_REGISTRY)
@@ -125,13 +131,50 @@ def test_posted_entries_to_inactive_or_deprecated_accounts_ignores_active_accoun
     assert posted_entries_to_inactive_or_deprecated_accounts(sample_data, AuditConfig()) == []
 
 
+def test_missing_analytic_tags_on_selected_accounts_flags_selected_account_lines(sample_data):
+    exceptions = missing_analytic_tags_on_selected_accounts(sample_data, AuditConfig())
+
+    assert [exception.record_id for exception in exceptions] == ["JL006"]
+
+
+def test_missing_analytic_tags_on_selected_accounts_ignores_non_selected_accounts(sample_data):
+    sample_data["accounts"]["requires_analytic_tag"] = "false"
+
+    assert missing_analytic_tags_on_selected_accounts(sample_data, AuditConfig()) == []
+
+
+def test_fx_entries_missing_currency_or_rate_metadata_flags_fx_related_lines(sample_data):
+    exceptions = fx_entries_missing_currency_or_rate_metadata(sample_data, AuditConfig())
+
+    assert [exception.record_id for exception in exceptions] == ["JL007"]
+
+
+def test_fx_entries_missing_currency_or_rate_metadata_ignores_complete_fx_metadata(sample_data):
+    sample_data["journal_entries"]["currency"] = "USD"
+    sample_data["journal_entries"]["fx_rate"] = "1.25"
+
+    assert fx_entries_missing_currency_or_rate_metadata(sample_data, AuditConfig()) == []
+
+
+def test_manual_journals_above_threshold_flags_posted_manual_journals(sample_data):
+    exceptions = manual_journals_above_threshold(sample_data, AuditConfig())
+
+    assert [exception.record_id for exception in exceptions] == ["JL008"]
+
+
+def test_manual_journals_above_threshold_uses_configured_threshold(sample_data):
+    config = AuditConfig(manual_journal_threshold=20000.0)
+
+    assert manual_journals_above_threshold(sample_data, config) == []
+
+
 def test_run_all_rules_and_export_report(sample_data, tmp_path):
     exceptions = run_all_rules(sample_data, AuditConfig())
     output_path = tmp_path / "exception_report.xlsx"
 
     export_exception_report(exceptions, output_path)
 
-    assert len(exceptions) == 10
+    assert len(exceptions) == 13
     assert output_path.exists()
     workbook = pd.ExcelFile(output_path)
     assert workbook.sheet_names == ["Summary", "Exceptions"]

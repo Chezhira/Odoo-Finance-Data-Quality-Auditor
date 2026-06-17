@@ -211,6 +211,101 @@ def posted_entries_to_inactive_or_deprecated_accounts(
     ]
 
 
+def missing_analytic_tags_on_selected_accounts(
+    data: dict[str, pd.DataFrame], config: AuditConfig
+) -> list[AuditException]:
+    del config
+    accounts = data["accounts"].copy()
+    entries = data["journal_entries"].copy()
+
+    selected_accounts = accounts[_as_bool(accounts["requires_analytic_tag"])].copy()
+    selected_accounts["account_id"] = selected_accounts["account_id"].astype(str)
+    entries["account_id"] = entries["account_id"].astype(str)
+
+    matches = entries[
+        entries["state"].eq("posted") & _is_blank(entries["analytic_tags"])
+    ].merge(
+        selected_accounts[["account_id", "code", "name"]],
+        on="account_id",
+        how="inner",
+    )
+
+    return [
+        _build_exception(
+            check_id="FIN-008",
+            entity="journal_entry_line",
+            record_id=str(row.line_id),
+            issue_type="Missing analytic tag on selected account",
+            message=f"Posted journal line {row.line_id} uses account {row.code} without analytic tags.",
+            amount=float(row.debit) - float(row.credit),
+            date=_parse_date(row.date),
+            metadata={"entry_id": row.entry_id, "account_id": row.account_id, "account_name": row.name},
+        )
+        for row in matches.itertuples(index=False)
+    ]
+
+
+def fx_entries_missing_currency_or_rate_metadata(
+    data: dict[str, pd.DataFrame], config: AuditConfig
+) -> list[AuditException]:
+    del config
+    entries = data["journal_entries"].copy()
+
+    fx_related = _as_bool(entries["is_foreign_currency"]) | entries["journal_type"].astype(str).str.lower().eq("exchange")
+    matches = entries[entries["state"].eq("posted") & fx_related & (_is_blank(entries["currency"]) | _is_blank(entries["fx_rate"]))]
+
+    return [
+        _build_exception(
+            check_id="FIN-009",
+            entity="journal_entry_line",
+            record_id=str(row.line_id),
+            issue_type="FX entry missing currency or rate metadata",
+            message=f"Posted FX-related journal line {row.line_id} is missing currency or rate metadata.",
+            amount=float(row.debit) - float(row.credit),
+            date=_parse_date(row.date),
+            metadata={
+                "entry_id": row.entry_id,
+                "journal_type": row.journal_type,
+                "is_foreign_currency": row.is_foreign_currency,
+                "currency": row.currency,
+                "fx_rate": row.fx_rate,
+            },
+        )
+        for row in matches.itertuples(index=False)
+    ]
+
+
+def manual_journals_above_threshold(data: dict[str, pd.DataFrame], config: AuditConfig) -> list[AuditException]:
+    entries = data["journal_entries"].copy()
+    entries["line_amount"] = entries["debit"].astype(float) - entries["credit"].astype(float)
+    matches = entries[
+        entries["state"].eq("posted")
+        & entries["journal_type"].astype(str).str.lower().eq("manual")
+        & (entries["line_amount"].abs() > config.manual_journal_threshold)
+    ]
+
+    return [
+        _build_exception(
+            check_id="FIN-010",
+            entity="journal_entry_line",
+            record_id=str(row.line_id),
+            issue_type="Manual journal above configured threshold",
+            message=(
+                f"Posted manual journal line {row.line_id} exceeds the configured threshold "
+                f"{config.manual_journal_threshold:.2f}."
+            ),
+            amount=float(row.line_amount),
+            date=_parse_date(row.date),
+            metadata={
+                "entry_id": row.entry_id,
+                "threshold": config.manual_journal_threshold,
+                "reference": row.reference,
+            },
+        )
+        for row in matches.itertuples(index=False)
+    ]
+
+
 def run_all_rules(data: dict[str, pd.DataFrame], config: AuditConfig) -> list[AuditException]:
     exceptions: list[AuditException] = []
     for check in CHECK_REGISTRY:
@@ -281,6 +376,33 @@ CHECK_REGISTRY: tuple[CheckDefinition, ...] = (
         source_model="journal_entries",
         recommended_action="Move the posting to an active account and restrict deprecated accounts from future use.",
         run=posted_entries_to_inactive_or_deprecated_accounts,
+    ),
+    CheckDefinition(
+        check_id="FIN-008",
+        name="Missing analytic tags on selected accounts",
+        description="Finds posted journal lines on selected expense or project accounts that require analytic tags.",
+        risk_level="medium",
+        source_model="journal_entries",
+        recommended_action="Add the correct analytic tag or repost the line to preserve project and expense reporting.",
+        run=missing_analytic_tags_on_selected_accounts,
+    ),
+    CheckDefinition(
+        check_id="FIN-009",
+        name="FX entries missing currency or rate metadata",
+        description="Finds posted foreign-currency or exchange-related journal lines missing currency or FX rate metadata.",
+        risk_level="high",
+        source_model="journal_entries",
+        recommended_action="Update the journal entry with the correct currency and exchange rate support before reporting.",
+        run=fx_entries_missing_currency_or_rate_metadata,
+    ),
+    CheckDefinition(
+        check_id="FIN-010",
+        name="Manual journals above configured threshold",
+        description="Finds posted manual journal lines whose absolute value exceeds the configured review threshold.",
+        risk_level="medium",
+        source_model="journal_entries",
+        recommended_action="Review approval evidence and supporting documentation for the high-value manual journal.",
+        run=manual_journals_above_threshold,
     ),
 )
 

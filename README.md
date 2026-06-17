@@ -1,7 +1,7 @@
 # Odoo Finance Data Quality Auditor
 
 CSV-first finance control checks for synthetic Odoo-style exports. The current
-vertical slice loads sample data, validates required schemas, runs seven finance
+vertical slice loads sample data, validates required schemas, runs ten finance
 data quality checks, and exports a readable Excel exception report.
 
 ## Included checks
@@ -13,6 +13,9 @@ data quality checks, and exports a readable Excel exception report.
 5. Vendor bills with missing tax evidence fields
 6. Inventory valuation records with negative quantity or negative value
 7. Posted journal entries to inactive or deprecated accounts
+8. Missing analytic tags on selected expense or project accounts
+9. FX entries missing currency or exchange rate metadata
+10. Manual journals above the configured review threshold
 
 Each check has a central registry entry with its name, description, risk level,
 source model, and recommended action. The CLI uses this registry so the reported
@@ -32,6 +35,9 @@ The sample command writes an Excel workbook with:
 - `Summary`: exception counts by risk level and issue type
 - `Exceptions`: check name, risk level, entity, source model, record ID, issue
   type, date, amount, recommended action, message, check ID, and metadata
+
+With the committed synthetic sample data, the CLI currently runs 10 checks and
+produces 13 intentionally triggered exceptions.
 
 The committed sample data is synthetic only. Generated reports are written under
 `reports/` and ignored by git, except for `reports/.gitkeep`.

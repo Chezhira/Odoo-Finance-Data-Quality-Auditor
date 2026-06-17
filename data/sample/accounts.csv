@@ -1,6 +1,7 @@
-account_id,code,name,type,active,is_suspense,is_deprecated
-1000,1000,Cash,asset,true,false,false
-2000,2000,Trade Payables,liability,true,false,false
-2999,2999,Suspense Clearing,liability,true,true,false
-4999,4999,Legacy Revenue Clearing,income,false,false,true
-6000,6000,Office Supplies,expense,true,false,false
+account_id,code,name,type,active,is_suspense,is_deprecated,requires_analytic_tag
+1000,1000,Cash,asset,true,false,false,false
+2000,2000,Trade Payables,liability,true,false,false,false
+2999,2999,Suspense Clearing,liability,true,true,false,false
+4999,4999,Legacy Revenue Clearing,income,false,false,true,false
+6000,6000,Office Supplies,expense,true,false,false,false
+6100,6100,Project Consulting Expense,expense,true,false,false,true
