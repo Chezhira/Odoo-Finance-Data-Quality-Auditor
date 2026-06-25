@@ -23,8 +23,10 @@ Finance teams need a practical way to assess close readiness, audit trail qualit
 ## Key Features
 
 - 10 registered finance validation checks with risk level, source model, and recommended action metadata
+- configurable thresholds and company-specific rule profiles
 - Streamlit dashboard for executive-facing exception review
 - Excel exception workbook with summary and detailed remediation tabs
+- email-ready Markdown exception summary for external scheduling workflows
 - CLI workflow for repeatable validation and report generation
 - pytest coverage for loader validation, rule behavior, dashboard helpers, and workbook export
 - GitHub Actions workflow for tests and sample-data smoke validation
@@ -133,6 +135,41 @@ $env:PYTHONPATH='src'; python -m odoo_finance_data_auditor.cli --sample-data dat
 
 Binary Excel outputs are intentionally ignored by git through `reports/*.xlsx`. Regenerate the sample exception workbook at any time with the CLI command above.
 
+## Rule Configuration And Profiles
+
+Default rule thresholds live in `config/rules.default.yml`. Named company-context profiles live in `config/profiles/`:
+
+- `default`
+- `manufacturing`
+- `multi_company`
+- `audit_prep`
+
+Profiles can adjust thresholds such as old unreconciled bank transaction age, high-value manual journal amount, negative inventory tolerance, and enabled check IDs.
+
+Run with a named profile:
+
+```powershell
+$env:PYTHONPATH='src'; python -m odoo_finance_data_auditor.cli --sample-data data\sample --profile manufacturing --output reports\manufacturing_exception_report.xlsx
+```
+
+Run with an explicit config file:
+
+```powershell
+$env:PYTHONPATH='src'; python -m odoo_finance_data_auditor.cli --sample-data data\sample --config config\rules.default.yml --output reports\configured_exception_report.xlsx
+```
+
+If both `--config` and `--profile` are provided, the explicit `--config` file takes priority.
+
+## Email-Ready Exception Summary
+
+The CLI can generate a Markdown summary suitable for Windows Task Scheduler, cron, GitHub Actions, n8n, or another external email/scheduling workflow. The project does not send email directly and does not require SMTP credentials.
+
+```powershell
+$env:PYTHONPATH='src'; python -m odoo_finance_data_auditor.cli --sample-data data\sample --profile manufacturing --output reports\manufacturing_exception_report.xlsx --email-summary reports\manufacturing_email_summary.md
+```
+
+The summary includes run date/time, selected profile/config, checks run, total exceptions, exceptions by risk, exceptions by check, top recommended follow-up actions, and the Excel workbook path.
+
 ## Testing And CI
 
 Run the test suite with:
@@ -163,11 +200,3 @@ This project demonstrates:
 - practical finance engineering for Odoo Functional Consultant, ERP Business Analyst, Finance Systems Analyst, and Accounting Systems Consultant roles
 
 For a fuller employer-facing walkthrough, see [Case Study](docs/case-study.md).
-
-## Roadmap
-
-- configurable rule thresholds
-- company-specific rule profiles
-- Odoo API connector
-- scheduled exception emails
-- AI-assisted remediation notes

@@ -10,7 +10,7 @@ Build a lightweight finance systems control tool that can review Odoo-compatible
 
 ## Approach
 
-The project maps common ERP accounting risks into repeatable validation checks. It accepts Odoo-compatible sample exports, runs finance-control checks, classifies issues by risk area, and produces both an interactive Streamlit dashboard and an Excel exception workbook.
+The project maps common ERP accounting risks into repeatable validation checks. It accepts Odoo-compatible sample exports, runs finance-control checks, classifies issues by risk area, and produces both an interactive Streamlit dashboard and an Excel exception workbook. Rule thresholds and enabled checks can be adjusted through YAML configuration files or company-specific profiles for contexts such as manufacturing, multi-company operations, and audit preparation.
 
 The workflow was designed around practical finance review questions:
 
@@ -30,6 +30,8 @@ The tool produces:
 - Risk-ranked exception summary
 - Excel remediation workbook
 - CLI execution option
+- Configurable thresholds and company-specific rule profiles
+- Email-ready Markdown exception summary for scheduled reporting workflows
 - Synthetic sample data for demonstration
 - Automated test coverage and GitHub Actions validation
 
@@ -42,12 +44,13 @@ The tool produces:
 - Python automation
 - Streamlit dashboarding
 - Excel exception reporting
+- Configurable finance controls and profile design
 - Testing and CI discipline
 - Finance-to-technology translation
 
 ## Business Value
 
-The project demonstrates how finance teams can identify ERP data-quality issues earlier in the close cycle, reduce manual review effort, improve audit readiness, and give finance systems teams a clearer remediation list.
+The project demonstrates how finance teams can identify ERP data-quality issues earlier in the close cycle, reduce manual review effort, improve audit readiness, and give finance systems teams a clearer remediation list. The email-ready Markdown output can be handed to Windows Task Scheduler, cron, GitHub Actions, n8n, or another external scheduling tool without requiring the application to send emails directly.
 
 ## Relevance to Target Roles
 

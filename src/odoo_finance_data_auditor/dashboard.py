@@ -29,13 +29,17 @@ REQUIRED_UPLOAD_DATASETS = (
 )
 
 
-def load_dashboard_results(sample_data_dir: Path) -> tuple[list[object], pd.DataFrame]:
+def load_dashboard_results(
+    sample_data_dir: Path, config: AuditConfig | None = None
+) -> tuple[list[object], pd.DataFrame]:
     data = load_csv_exports(sample_data_dir)
-    return run_dashboard_results(data)
+    return run_dashboard_results(data, config or AuditConfig())
 
 
-def run_dashboard_results(data: dict[str, pd.DataFrame]) -> tuple[list[object], pd.DataFrame]:
-    exceptions = run_all_rules(data, AuditConfig())
+def run_dashboard_results(
+    data: dict[str, pd.DataFrame], config: AuditConfig
+) -> tuple[list[object], pd.DataFrame]:
+    exceptions = run_all_rules(data, config)
     return exceptions, exceptions_to_dataframe(exceptions)
 
 
@@ -86,21 +90,24 @@ def load_uploaded_csv_exports(uploaded_files: list[object] | None) -> dict[str, 
     return data
 
 
-def load_uploaded_dashboard_results(uploaded_files: list[object] | None) -> tuple[list[object], pd.DataFrame]:
-    return run_dashboard_results(load_uploaded_csv_exports(uploaded_files))
+def load_uploaded_dashboard_results(
+    uploaded_files: list[object] | None, config: AuditConfig | None = None
+) -> tuple[list[object], pd.DataFrame]:
+    return run_dashboard_results(load_uploaded_csv_exports(uploaded_files), config or AuditConfig())
 
 
-def build_kpis(exception_rows: pd.DataFrame) -> dict[str, int]:
+def build_kpis(exception_rows: pd.DataFrame, checks_run: int | None = None) -> dict[str, int]:
+    checks_run = checks_run or len(CHECK_REGISTRY)
     if exception_rows.empty:
         return {
-            "total_checks": len(CHECK_REGISTRY),
+            "total_checks": checks_run,
             "total_exceptions": 0,
             "high_risk_exceptions": 0,
             "exception_types": 0,
         }
 
     return {
-        "total_checks": len(CHECK_REGISTRY),
+        "total_checks": checks_run,
         "total_exceptions": int(len(exception_rows)),
         "high_risk_exceptions": int(exception_rows["risk_level"].eq("high").sum()),
         "exception_types": int(exception_rows["issue_type"].nunique()),

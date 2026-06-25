@@ -5,4 +5,5 @@ __pycache__/
 .venv/
 reports/*.xlsx
 reports/*.csv
+reports/*.md
 !reports/.gitkeep

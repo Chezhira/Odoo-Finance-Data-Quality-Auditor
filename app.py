@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# ruff: noqa: E402
+
 from pathlib import Path
 import sys
 
@@ -28,6 +30,7 @@ from odoo_finance_data_auditor.dashboard import (
     upload_status_rows,
     workbook_bytes,
 )
+from odoo_finance_data_auditor.config import list_available_profiles, load_audit_config
 from odoo_finance_data_auditor.loader import SchemaValidationError
 from odoo_finance_data_auditor.rules import CHECK_REGISTRY
 
@@ -86,6 +89,16 @@ def main() -> None:
     )
 
     st.sidebar.header("Review Scope")
+    profiles = list_available_profiles()
+    selected_profile = st.sidebar.selectbox(
+        "Rule profile",
+        options=profiles or ["default"],
+        index=(profiles or ["default"]).index("default") if "default" in (profiles or ["default"]) else 0,
+    )
+    config = load_audit_config(profile=selected_profile)
+    checks_run = len(config.enabled_checks or CHECK_REGISTRY)
+    st.sidebar.caption(f"Using `{config.profile_name}` profile thresholds.")
+
     data_source_mode = st.sidebar.radio(
         "Data source",
         ["Use bundled sample data", "Upload CSV files"],
@@ -97,11 +110,11 @@ def main() -> None:
         sample_data_dir = Path(
             st.sidebar.text_input("ERP export folder", value=str(SAMPLE_DATA_DIR))
         )
-        _, exception_rows = load_dashboard_results(sample_data_dir)
-        st.caption(f"Loaded `{sample_data_dir}` and ran {len(CHECK_REGISTRY)} registered finance control checks.")
+        _, exception_rows = load_dashboard_results(sample_data_dir, config=config)
+        st.caption(f"Loaded `{sample_data_dir}` and ran {checks_run} registered finance control checks.")
     else:
-        exception_rows = _load_uploaded_exception_rows()
-    kpis = build_kpis(exception_rows)
+        exception_rows = _load_uploaded_exception_rows(config=config, checks_run=checks_run)
+    kpis = build_kpis(exception_rows, checks_run=checks_run)
 
     kpi_cols = st.columns(4)
     _kpi_card(kpi_cols[0], "Checks run", kpis["total_checks"])
@@ -268,7 +281,7 @@ def _horizontal_bar_chart(rows: pd.DataFrame, label_column: str, height: int) ->
     st.altair_chart(chart, use_container_width=True)
 
 
-def _load_uploaded_exception_rows() -> pd.DataFrame:
+def _load_uploaded_exception_rows(config, checks_run: int) -> pd.DataFrame:
     st.subheader("Upload Odoo-Compatible CSV Exports")
     st.markdown(
         """
@@ -300,7 +313,7 @@ def _load_uploaded_exception_rows() -> pd.DataFrame:
         st.stop()
 
     try:
-        _, exception_rows = load_uploaded_dashboard_results(uploaded_files)
+        _, exception_rows = load_uploaded_dashboard_results(uploaded_files, config=config)
     except SchemaValidationError as exc:
         st.error(f"Uploaded CSV schema validation failed: {exc}")
         st.stop()
@@ -308,7 +321,7 @@ def _load_uploaded_exception_rows() -> pd.DataFrame:
         st.error(f"Unable to read uploaded CSV files: {exc}")
         st.stop()
 
-    st.caption(f"Loaded uploaded CSV files and ran {len(CHECK_REGISTRY)} registered finance control checks.")
+    st.caption(f"Loaded uploaded CSV files and ran {checks_run} registered finance control checks.")
     return exception_rows
 
 

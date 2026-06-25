@@ -149,9 +149,12 @@ def vendor_bills_missing_tax_evidence(data: dict[str, pd.DataFrame], config: Aud
 
 
 def negative_inventory_valuation_records(data: dict[str, pd.DataFrame], config: AuditConfig) -> list[AuditException]:
-    del config
     valuations = data["inventory_valuation"].copy()
-    matches = valuations[(valuations["quantity"].astype(float) < 0) | (valuations["value"].astype(float) < 0)]
+    tolerance = abs(config.negative_inventory_tolerance)
+    matches = valuations[
+        (valuations["quantity"].astype(float) < -tolerance)
+        | (valuations["value"].astype(float) < -tolerance)
+    ]
 
     return [
         _build_exception(
@@ -309,6 +312,8 @@ def manual_journals_above_threshold(data: dict[str, pd.DataFrame], config: Audit
 def run_all_rules(data: dict[str, pd.DataFrame], config: AuditConfig) -> list[AuditException]:
     exceptions: list[AuditException] = []
     for check in CHECK_REGISTRY:
+        if config.enabled_checks and check.check_id not in config.enabled_checks:
+            continue
         exceptions.extend(check.run(data, config))
     return exceptions
 

@@ -1,0 +1,18 @@
+profile_name: default
+thresholds:
+  close_date: "2026-03-31"
+  as_of_date: "2026-04-15"
+  bank_line_age_days: 60
+  manual_journal_threshold: 10000.0
+  negative_inventory_tolerance: 0.0
+enabled_checks:
+  - FIN-001
+  - FIN-002
+  - FIN-003
+  - FIN-004
+  - FIN-005
+  - FIN-006
+  - FIN-007
+  - FIN-008
+  - FIN-009
+  - FIN-010
