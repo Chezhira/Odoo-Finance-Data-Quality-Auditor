@@ -162,6 +162,8 @@ This project demonstrates:
 - CI/CD-backed delivery with repeatable smoke tests
 - practical finance engineering for Odoo Functional Consultant, ERP Business Analyst, Finance Systems Analyst, and Accounting Systems Consultant roles
 
+For a fuller employer-facing walkthrough, see [Case Study](docs/case-study.md).
+
 ## Roadmap
 
 - configurable rule thresholds
